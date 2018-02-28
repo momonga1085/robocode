@@ -9,5 +9,6 @@ public class Enemy {
 	public double distance;
 	public double energy;
 	boolean isFired = false;
+	int avoidCount;
 
 }

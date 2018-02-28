@@ -7,8 +7,10 @@ import java.util.Map;
 
 import robocode.AdvancedRobot;
 import robocode.BulletHitEvent;
+import robocode.BulletMissedEvent;
 import robocode.Condition;
 import robocode.CustomEvent;
+import robocode.HitByBulletEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
 import robocode.RobotDeathEvent;
@@ -35,6 +37,7 @@ public class 絶対最強王 extends AdvancedRobot {
 	Search search;
 	
 	AdvancedRobot myself = this;
+	public Enemy targetEnemy;
 	
 	static boolean firstOnGame = true;
 	
@@ -54,7 +57,7 @@ public class 絶対最強王 extends AdvancedRobot {
 		addEnemy(e);
 		Enemy enemy = 俺の倒すべき相手達.get(e.getName());
 
-		aim.fire(e);
+		aim.fire(e, 3);
 		movement.move(e);
 		search.search(e);
 		execute();
@@ -73,20 +76,19 @@ public class 絶対最強王 extends AdvancedRobot {
 			俺の倒すべき相手達.put(enemyName, new Enemy());
 		}
 		double absBearing = e.getBearingRadians() + getHeadingRadians();
-		Enemy enemy = 俺の倒すべき相手達.get(enemyName);
-		enemy.point = new Point2D.Double(
+		targetEnemy = 俺の倒すべき相手達.get(enemyName);
+		targetEnemy.point = new Point2D.Double(
 				getX() + e.getDistance() * Math.sin(absBearing), 
 				getY() + e.getDistance() * Math.cos(absBearing)
 				);
-		enemy.absBearing = absBearing;
-		enemy.distance = e.getDistance();
-		double oldEnergy = enemy.energy;
+		targetEnemy.absBearing = absBearing;
+		targetEnemy.distance = e.getDistance();
+		double oldEnergy = targetEnemy.energy;
 		if ((oldEnergy - e.getEnergy( ) <= 3 && oldEnergy - e.getEnergy() >= 0.1)) {
-			enemy.isFired = true;
+			targetEnemy.isFired = true;
 		} else {
-			enemy.isFired = false;
+			targetEnemy.isFired = false;
 		}
-		
 	}
 	
 
@@ -107,9 +109,27 @@ public class 絶対最強王 extends AdvancedRobot {
 	}
 	
 	@Override
-	public void onBulletHit(BulletHitEvent e) {
+	public void onHitByBullet(HitByBulletEvent event) {
 		movement = new RandomMovement(this, 俺の倒すべき相手達);
 	}
+	
+	@Override
+	public void onBulletMissed(BulletMissedEvent event) {
+		targetEnemy.avoidCount++;
+	}
+	
+	@Override
+	public void onBulletHit(BulletHitEvent event) {
+		targetEnemy.avoidCount = 0;
+	}
+	
+	@Override
+	public void onHitWall(HitWallEvent event) {
+		System.out.println("壁に当たってしまいました。。。");
+	}
+	
+	
+	
 	
 	@Override
 	public void onCustomEvent(CustomEvent e) {
@@ -123,13 +143,6 @@ public class 絶対最強王 extends AdvancedRobot {
 			break;
 		}
 	}
-	
-	@Override
-	public void onHitWall(HitWallEvent event) {
-		System.out.println("壁に当たってしまいました。。。");
-	}
-	
-	
 	
 	
 	

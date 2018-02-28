@@ -12,8 +12,7 @@ public class SimpleLinerAim extends Aim {
 	}
 
 	@Override
-	public void fire(ScannedRobotEvent e) {
-		double bulletPower = 3;
+	public void fire(ScannedRobotEvent e, double bulletPower) {
 		double headOnBearing = myself.getHeadingRadians() + e.getBearingRadians();
 		double absBearing = e.getBearingRadians() + myself.getHeadingRadians();
 		double linearBearing = headOnBearing + Math.asin(

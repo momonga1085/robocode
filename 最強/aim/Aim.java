@@ -11,6 +11,6 @@ public abstract class Aim {
 		this.myself = myself;
 	}
 	
-	abstract public void fire(ScannedRobotEvent e);
+	abstract public void fire(ScannedRobotEvent e, double bulletPower);
 
 }

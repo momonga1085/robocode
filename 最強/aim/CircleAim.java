@@ -15,8 +15,7 @@ public class CircleAim extends Aim {
 	double oldEnemyHeading = 0;
 
 	@Override
-	public void fire(ScannedRobotEvent e) {
-		double bulletPower = Math.min(3.0, myself.getEnergy());
+	public void fire(ScannedRobotEvent e, double bulletPower) {
 		double myX = myself.getX();
 		double myY = myself.getY();
 		double absoluteBearing = myself.getHeadingRadians() + e.getBearingRadians();
