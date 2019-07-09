@@ -4,67 +4,97 @@
     ref="chartWrapper"
   >
     <svg
-      :width="width"
-      :height="height"
+      :id="chartName + '-svg'"
+      :width="width + margin.left + margin.right"
+      :height="height  + margin.top + margin.bottom"
     >
-      <g
-        :id="chartName + '-x-axis'"
-        class="axis x-axis"
-        :transform="transformX()"
-      ></g>
 
-      <g
-        :id="chartName + '-y-axis'"
-        class="axis y-axis"
-        :transform="transformY()"
-      ></g>
+      <g :transform="transform(margin.left, margin.top )">
 
-      <clipPath id="clip-path">
-        <rect
-          id="clip-rect"
-          x=0
-          y=0
-          :width="width"
-          :height="height - 100"
-        ></rect>
-      </clipPath>
+        <g
+          :id="chartName + '-x-axis'"
+          class="axis x-axis"
+          :transform="transform(0, height)"
+        ></g>
 
-      <g
-        :id="chartName + '-data'"
-        class="plot-area"
-        v-for="(lineData, lineIndex) in chartData"
-        :key="lineIndex"
-      >
-        <path
-          :id="chartName + '-line'"
-          class="line"
-          :transform="transformY()"
-          :d="drawLine(formatData(lineData))"
-          fill="none"
-          stroke="black"
-          stroke-width="2px"
-          clip-path="url(#clip-path)"
-        ></path>
+        <g
+          :id="chartName + '-y-axis'"
+          class="axis y-axis"
+        ></g>
 
-        <circle
-          :id="chartName + '-point'"
-          v-for="(data, dataIndex) in formatData(lineData)"
-          :key="dataIndex"
-          :cx="getCX(data)"
-          :cy="getCY(data)"
-          :transform="transformY()"
-          clip-path="url(#clip-path)"
-          r=5
+        <clipPath
+          id="clip-path"
         >
-        </circle>
-      </g>
+          <rect
+            id="clip-rect"
+            :width="width"
+            :height="height"
+          ></rect>
+          <!-- <rect
+            id="clip-rect-2"
+            :width="width"
+            :height="height"
+            :transform="transform(-5, 0)"
+          ></rect> -->
+        </clipPath>
 
+        <clipPath
+          id="clip-path"
+        >
+          <rect
+            id="clip-rect-2"
+            :width="width"
+            :height="height"
+          ></rect>
+          <rect
+            id="clip-rect-2"
+            :width="width"
+            :height="height"
+            :transform="transform(-5, 0)"
+          ></rect>
+        </clipPath>
+
+        <g
+          :id="chartName + '-data'"
+          class="plot-area"
+          v-for="(lineData, lineIndex) in chartData"
+          :key="lineIndex"
+        >
+          <path
+            :id="chartName + '-line'"
+            :class="chartName + '-line'"
+            :d="drawLine(formatData(lineData.values))"
+            clip-path="url(#clip-path)"
+            @mouseover="mouseoverLine(lineData, $event)"
+          ></path>
+
+          <circle
+            :id="chartName + '-point'"
+            :class="chartName + '-point'"
+            v-for="(data, dataIndex) in formatData(lineData.values)"
+            :key="dataIndex"
+            @mouseover="mouseoverPoint(data, $event)"
+            :cx="getCX(data)"
+            :cy="getCY(data)"
+            clip-path="url(#clip-path-2)"
+            r=2
+          >
+          </circle>
+        </g>
+      </g>
     </svg>
+
+    <div
+      :id="chartName + '-tooltip'"
+      class="tooltip"
+    ></div>
+
   </div>
 </template>
 
 <script>
 import * as d3 from "d3";
+import * as d3Tip from "d3-tip";
 import XAxis from "./XAxis";
 
 // var width = this.$refs.chartWrapper.clientWidth;
@@ -87,85 +117,58 @@ export default {
       width: width,
       height: height,
       xScale: this.getScaleX(),
-      yScale: this.getScaleY()
+      yScale: this.getScaleY(),
+      margin: { top: 50, left: 50, bottom: 50, right: 50 }
       // margin: { top: 50, left: 50, bottom: 50, right: 50 },
     };
   },
   methods: {
-    transformX() {
-      var cx = margin.left;
-      var cy = this.height - margin.top;
-      return "translate(" + cx + "," + cy + ")";
-    },
-    transformY() {
-      var cx = margin.left;
-      var cy = margin.top;
-      return "translate(" + cx + "," + cy + ")";
+    transform(x, y) {
+      return "translate(" + x + "," + y + ")";
     },
     getScaleX() {
       var xScale = d3
         .scaleTime()
         .domain([
-          new Date("2007-10-01 0:00:00"),
+          new Date("2007-09-30 0:00:00"),
           new Date("2007-10-31 0:00:00")
         ])
-        .range([0, this.width-margin.right-margin.left]);
+        .range([0, this.width]);
       return xScale;
     },
     getScaleY() {
       var labels = [
-        { id: 1, name: "ばなな" },
-        { id: 2, name: "りんご" },
-        { id: 3, name: "ぶどう" }
+        { id: 1, name: "工程1" },
+        { id: 2, name: "工程2" },
+        { id: 3, name: "工程3" },
+        { id: 3, name: "工程4" },
+        { id: 3, name: "工程5" },
+        { id: 3, name: "工程6" },
+        { id: 3, name: "工程7" }
       ];
 
       var yScale = d3
-        .scaleLinear()
-        .domain([
-          7,
-          0
-        ])
-          // d3.max(this.formatData(this.chartData), function(d) {
-          //   return d.value;
-          // })
-        // ])
-        // .scaleQuantile()
-        // .domain(["a", "b"])
-        // .scaleBand()
-        // .domain(
-        //   labels.map(function(d) {
-        //     return d.name;
-        //   }))
-        // )
-        // .rangeRound([0, this.height])
-      .range([this.height - margin.top - margin.bottom, 0]);
+        .scaleBand()
+        .rangeRound([0, this.height])
+        .padding(1)
+        .domain(
+          labels.map(function(d) {
+            return d.name;
+          })
+        );
       return yScale;
     },
     drawAxisX() {
       var xAxis = d3
         .axisBottom(this.getScaleX())
-        .tickFormat(d3.timeFormat("%m/%d"))
+        .tickFormat(d3.timeFormat("%m/%d"));
 
       var xAxisElem = d3.select("#" + this.chartName + "-x-axis");
 
       xAxisElem.call(xAxis);
     },
     drawAxisY() {
-      var map = {
-        1: "工程1",
-        2: "工程2",
-        3: "工程3",
-        4: "工程4",
-        5: "工程5",
-        6: "工程6",
-      }
-      var yAsis = d3.axisLeft(this.getScaleY())
-      .tickFormat(function(d) {
-        return map[d]
-        return d
-      })
-      .ticks(8);
-
+      var yAsis = d3.axisLeft(this.getScaleY());
       var yAxisElem = d3.select("#" + this.chartName + "-y-axis");
 
       yAxisElem.call(yAsis);
@@ -187,36 +190,6 @@ export default {
         });
 
       return line(data);
-
-      // var lineElem = d3.select("#" + this.chartName + "-line");
-      // lineElem
-      //   .datum(this.formatData(this.chartData))
-      //   .attr("d", line)
-      //   .attr("fill", "none")
-      //   .attr("stroke", color)
-      //   .attr("stroke-width", "2px")
-      //   .attr("clip-path", "url(#clip-path)");
-      // .attr("x", margin.left)
-      // .attr("y", margin.bottom);
-
-      // var g = d3.select("#" + this.chartName + "-data");
-      // g.selectAll("circle")
-      //   .data(this.formatData(this.chartData))
-      //   .enter()
-      //   .append("circle")
-      //   .attr("cx", line.x())
-      //   .attr("cy", line.y())
-      //   .attr("fill", 1)
-      //   .attr("r", 4)
-      //   .attr("transform", this.transformY());
-      // .attr({
-      //   cx: line.x(),
-      //   cy: line.y(),
-      //   r: 5,
-      //   fill: "#000",
-      //   transform: this.transformY()
-      // })
-      // .attr("transform", this.transformY());
     },
     drawPoint() {
       var xScale = this.getScaleX();
@@ -230,20 +203,6 @@ export default {
         .y(function(d) {
           return yScale(d.value);
         });
-
-      var $point = d3.selectAll("#" + this.chartName + "-point");
-      $point
-        .data(this.formatData(this.chartData))
-        .attr("cx", function(d) {
-          return xScale(d.date);
-        })
-        .attr("cy", function(d) {
-          return yScale(d.value);
-        })
-        .attr("r", 5)
-        .attr("transform", this.transformY())
-        .attr("fill", 1)
-        .attr("r", 4);
     },
     getCX(d) {
       var xScale = this.getScaleX();
@@ -255,32 +214,72 @@ export default {
     },
     handleResize() {
       this.width = this.$refs.chartWrapper.clientWidth - 200;
-      this.height = this.$refs.chartWrapper.clientHeight;
+      // this.height = this.$refs.chartWrapper.clientHeight;
       this.drawAxisX();
       this.drawAxisY();
-      console.log(this.height)
       // this.drawLine();
       // this.drawPoint();
+    },
+    // mousemove() {
+    //   d3.select(".tooltip")
+    //     .style("top", d3.event.pageY - 20 + "px")
+    //     .style("left", d3.event.pageX + 10 + "px");
+    // },
+    drowToolTip() {
+      var tooptipElm = d3.select("#" + this.chartName + "-tooltip");
+
+      var targetLineClass = "." + this.chartName + "-line";
+      var targetPointClass = "." + this.chartName + "-point";
+
+      d3.selectAll(targetLineClass + ", " + targetPointClass)
+        .on("mousemove", function(d) {
+          d3.select(".tooltip")
+            .style("top", d3.event.pageY - 20 + "px")
+            .style("left", d3.event.pageX + 10 + "px");
+        })
+        .on("mouseout", function() {
+          d3.select(".tooltip")
+            .style("visibility", "hidden");
+        });
     },
     drawChart() {
       this.drawAxisX();
       this.drawAxisY();
+      this.drowToolTip();
       // this.drawLine();
       // this.drawPoint();
     },
     formatData(chartData) {
       let timeparser = d3.timeParse("%Y-%m-%d");
+      console.log(chartData);
       var formatedChartData = chartData.map(function(d) {
+        // console.log(d)
         return { date: timeparser(d.date), value: d.value };
       });
       return formatedChartData;
-    }
+    },
+    mouseoverLine(lineData, e) {
+      d3.select(".tooltip")
+        .attr("fill", "rgb(39, 250, 102)")
+        .attr("display", "block")
+        .style("visibility", "visible")
+        .html("<div>シリアルNO：" + lineData.serialNo + "</div>");
+    },
+    mouseoverPoint(data, e) {
+      d3.select(".tooltip")
+        .attr("fill", "rgb(39, 250, 102)")
+        .attr("display", "block")
+        .style("visibility", "visible")
+        .html("<div>シリアルNO：" + data.date + "</div>");
+    },
   },
 
   mounted() {
     window.addEventListener("resize", this.handleResize);
-    this.width = this.$refs.chartWrapper.clientWidth - 50;
-    this.height = this.$refs.chartWrapper.clientHeight - 50;
+    this.width =
+      this.$refs.chartWrapper.clientWidth - margin.left - margin.right;
+    // this.height = this.$refs.chartWrapper.clientHeight - 50;
+    this.height = 200 + margin.top - margin.bottom;
     this.drawChart();
   },
 
@@ -294,7 +293,7 @@ export default {
 <style>
 .axis .domain {
   stroke: #ccc;
-  position: relative;
+  /* position: relative; */
 }
 .axis .tick line {
   stroke: #ccc;
@@ -303,17 +302,52 @@ export default {
 .plot-area {
   margin-left: 50px;
 }
-
+/* 
 .axis .tick text {
   fill: #223f4b;
   font-family: "Helvetica Neue", "Roboto", "ヒラギノ角ゴ ProN",
     "Hiragino Kaku Gothic ProN", "游ゴシック体", "Yu Gothic", YuGothic, Verdana,
     Meiryo, sans-serif !important;
   font-size: 0.7rem;
-}
+} */
 #chart--wrapper {
   width: 100%;
   height: 100%;
+}
+
+#diagram-line {
+  stroke: #4682b4;
+  fill: none;
+  stroke-width: 2px;
+}
+
+#diagram-line:hover {
+  stroke: #00008b;
+}
+
+#diagram-point {
+  stroke: black;
+  fill:white;
+  r: 4
+}
+
+#diagram-point:hover {
+  fill:black;
+}
+
+.tooltip {
+  position: absolute;
+  text-align: center;
+  width: auto;
+  height: auto;
+  padding: 5px;
+  font: 10px;
+  background: yellow;
+  visibility: hidden;
+}
+
+.bar:hover {
+  fill: Brown;
 }
 </style>
 
