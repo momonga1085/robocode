@@ -11,7 +11,7 @@
       <!-- <side-menu></side-menu>
     <table2></table2> -->
       <!-- <diagram :chartData="chartData"></diagram> -->
-      <BarChart :chartData="chartData"></BarChart>
+      <!-- <BarChart :chartData="chartData"></BarChart> -->
       <!-- <Heatmap :chartData="chartData"></Heatmap> -->
       <!-- <chart></chart> -->
       <!-- <diagram-chart></diagram-chart> -->
@@ -30,6 +30,7 @@ import DiagramChart from "./components/DiagramChart";
 import KpiChart from "./components/KpiChart";
 import Heatmap from "./components/Heatmap";
 import BarChart from "./components/BarChart";
+import { constants } from "crypto";
 
 // var chartData = [
 //   {
@@ -143,57 +144,57 @@ import BarChart from "./components/BarChart";
 
 var chartData = [
   {
-    serialNo: "aaa",
+    lineNo: "aaa",
     values: [
       {
-        date: "1",
-        value: "工程1",
+        x: "19",
+        y: "工程1",
         z: 10,
         message: "aaaa"
       },
       {
-        date: "2",
-        value: "工程3",
+        x: "2",
+        y: "工程3",
         z: 10,
         message: "aaaa"
-      },
+      }
     ]
   },
   {
-    serialNo: "aaa",
+    lineNo: "bbb",
     values: [
       {
-        date: "1",
-        value: "工程2",
+        x: "6",
+        y: "工程2",
         z: 10,
         message: "aaaa"
       },
       {
-        date: "2",
-        value: "工程2",
+        x: "221",
+        y: "工程2",
         z: 10,
         message: "aaaa"
-      },
+      }
     ]
   },
   {
-    serialNo: "aaa",
+    lineNo: "ccc",
     values: [
       {
-        date: "1",
-        value: "工程2",
+        x: "87",
+        y: "工程2",
         z: 10,
         message: "aaaa"
       },
       {
-        date: "2",
-        value: "工程2",
+        x: "53",
+        y: "工程2",
         z: 10,
         message: "aaaa"
-      },
+      }
     ]
   }
-]
+];
 
 export default {
   name: "app",
@@ -215,20 +216,43 @@ export default {
     diagram: diagram,
     "diagram-chart": DiagramChart,
     "kpi-chart": KpiChart,
-    Heatmap : Heatmap,
+    Heatmap: Heatmap,
     BarChart: BarChart
   },
   created() {
-    var lines = [];
-    for (var i = 0; i < 2; i++) {
-      var line = [];
-      for (var j = 0; j < 11; j++) {
-        line.push([j, Math.floor(Math.random() * 10)]);
+    console.log("--before--");
+    console.log(this.chartData);
+
+    let transformedData = [];
+    let lineData = {};
+
+    for (let i = 0; i < this.chartData.length; i++) {
+      let lineNo = this.chartData[i].lineNo;
+      for (let j = 0; j < this.chartData[i].values.length; j++) {
+        let values = this.chartData[i].values[j];
+        console.log(values.y);
+        if (lineData[values.y] == null) {
+          lineData[values.y] = { values: [] };
+        }
+        let data = { x: values.x, y: lineNo };
+        lineData[values.y].values.push(data);
       }
-      lines.push(line);
     }
-    this.lines = lines;
-    console.log(lines);
+    console.log("--after--");
+    console.log(lineData);
+    console.log("--sort--");
+    for (let key in lineData) {
+      lineData[key].values.sort(function(a, b) {
+        console.log(a)
+        console.log(b)
+        console.log("")
+        if (a.x > b.x) return -1;
+        if (a.x < b.x) return 1;
+        return 0;
+      });
+      console.log(lineData[key].values);
+    }
+    console.log(lineData);
   }
 };
 </script>
